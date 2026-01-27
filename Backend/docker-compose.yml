@@ -1,0 +1,69 @@
+services:
+  # The Eyes
+  vision:
+    build:
+      context: ./vision_service
+      dockerfile: Dockerfile.vision
+    container_name: vision_engine
+    volumes:
+      - ./vision_service/weights:/app/weights:ro
+    environment:
+      - YOLO_OFFLINE=True
+    # devices:
+    #   - "/dev/video0:/dev/video0" # not needed, because the frames come from frontend (/process)
+    expose:
+      - "8001"
+    restart: always
+
+  # The ID
+  identity:
+    build:
+      context: ./identity_service
+      dockerfile: Dockerfile.id
+    container_name: identity_service
+    volumes:
+      - ./identity_service/data:/app/data
+      - ./vision_service/weights:/app/weights:ro
+    environment:
+      - YOLO_CONFIG_DIR=/tmp/ultralytics
+      - YOLO_OFFLINE=True
+    expose:
+      - "8002"
+    restart: always
+
+  # The Ears
+  audio:
+    build:
+      context: ./audio_service
+      dockerfile: Dockerfile.audio
+    container_name: audio_service
+    ports:
+      - "8002:8002"
+    devices:
+      - "/dev/snd:/dev/snd" # Mapping host microphone to container
+    volumes:
+      - ./audio_service/panns_data:/app/panns_data
+    expose:
+      - "8003"
+    restart: always
+
+  # The Brain (Entry point)
+  gateway:
+    build:
+      context: ./gateway_fusion
+      dockerfile: Dockerfile.gateway
+    container_name: fusion_gateway
+    ports:
+      - "8000:8000" # Only this port is open to the public
+    depends_on:
+      - vision
+      - identity
+      - audio
+    restart: always
+    # environment variables:
+    environment:
+      - VISION_URL=http://vision:8001/process
+      - IDENTITY_URL=http://identity:8002
+      - AUDIO_URL=http://audio:8003/get_features
+      - GATEWAY_URL=http://gateway:8000/analyze
+      - YOLO_OFFLINE=True

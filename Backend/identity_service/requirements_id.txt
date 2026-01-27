@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn==0.23.2                 # Updated for Py3.11 compatibility
+python-multipart
+torch==2.2.2
+--extra-index-url https://download.pytorch.org/whl/cpu
+facenet-pytorch==2.6.0
+ultralytics==8.3.252             # Updated to a Py3.11-compatible version
+scikit-learn==1.8.0             # Picked latest compatible
+opencv-python-headless
+numpy==1.26.4
+torchvision==0.17.2
